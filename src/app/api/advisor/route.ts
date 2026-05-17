@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import Groq from "groq-sdk";
 
 function getGroq() {
-  return new Groq({ apiKey: process.env.GROQ_API_KEY ?? "" });
+  const apiKey = process.env.GROQ_API_KEY ?? process.env.KYR_API ?? "";
+  return new Groq({ apiKey });
 }
 
 const SYSTEM_PROMPT = `You are a sharp, practical financial advisor embedded in KnowYourRate — a tool that helps workers understand their true earning power. Your job is to give concise, specific insights about salary vs contractor comparisons, effective tax rates, hourly rates, and compensation strategy.
