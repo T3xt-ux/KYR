@@ -17,7 +17,11 @@ const defaultInputs: RateInputs = {
   benefits: 5000,
 };
 
-export default function RateCalculator() {
+interface Props {
+  onResults?: (results: RateResults) => void;
+}
+
+export default function RateCalculator({ onResults }: Props) {
   const [inputs, setInputs] = useState<RateInputs>(defaultInputs);
   const [results, setResults] = useState<RateResults | null>(null);
 
@@ -27,7 +31,9 @@ export default function RateCalculator() {
   }
 
   function handleCalculate() {
-    setResults(calculateRates(inputs));
+    const r = calculateRates(inputs);
+    setResults(r);
+    onResults?.(r);
   }
 
   return (

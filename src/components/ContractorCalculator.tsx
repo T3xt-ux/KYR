@@ -17,7 +17,11 @@ const defaultInputs: ContractorInputs = {
   businessExpenses: 6000,
 };
 
-export default function ContractorCalculator() {
+interface Props {
+  onResults?: (results: ContractorResults) => void;
+}
+
+export default function ContractorCalculator({ onResults }: Props) {
   const [inputs, setInputs] = useState<ContractorInputs>(defaultInputs);
   const [results, setResults] = useState<ContractorResults | null>(null);
 
@@ -27,7 +31,9 @@ export default function ContractorCalculator() {
   }
 
   function handleCalculate() {
-    setResults(calculateContractorRate(inputs));
+    const r = calculateContractorRate(inputs);
+    setResults(r);
+    onResults?.(r);
   }
 
   return (

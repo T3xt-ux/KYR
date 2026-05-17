@@ -1,7 +1,15 @@
+"use client";
+
+import { useState } from "react";
 import RateCalculator from "@/components/RateCalculator";
 import ContractorCalculator from "@/components/ContractorCalculator";
+import AIAdvisor from "@/components/AIAdvisor";
+import { type RateResults, type ContractorResults } from "@/lib/calculations";
 
 export default function Home() {
+  const [rateResults, setRateResults] = useState<RateResults | null>(null);
+  const [contractorResults, setContractorResults] = useState<ContractorResults | null>(null);
+
   return (
     <main className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-10">
@@ -23,6 +31,7 @@ export default function Home() {
             "Tax Estimation",
             "Contractor vs Employee",
             "Equivalent Salary",
+            "AI Advisor",
           ].map((pill) => (
             <span
               key={pill}
@@ -35,9 +44,12 @@ export default function Home() {
 
         {/* Calculators */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <RateCalculator />
-          <ContractorCalculator />
+          <RateCalculator onResults={setRateResults} />
+          <ContractorCalculator onResults={setContractorResults} />
         </div>
+
+        {/* AI Advisor */}
+        <AIAdvisor rateResults={rateResults} contractorResults={contractorResults} />
 
         {/* How it works */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -78,8 +90,8 @@ const steps = [
       "See your gross and net hourly, monthly, and annual figures broken down clearly.",
   },
   {
-    title: "Compare & Decide",
+    title: "Ask the AI Advisor",
     description:
-      "Use the contractor analyzer to see if going independent would put more money in your pocket.",
+      "Get personalized insights powered by Groq — compare options, understand your tax rate, and decide what's best.",
   },
 ];
