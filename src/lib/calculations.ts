@@ -86,6 +86,40 @@ export function calculateContractorRate(
   };
 }
 
+export interface OfferInputs {
+  company: string;
+  baseSalary: number;
+  signingBonus: number;
+  annualEquity: number;
+  healthInsuranceCost: number;
+  ptoDays: number;
+  remoteDaysPerWeek: number;
+  hoursPerWeek: number;
+}
+
+export interface OfferResults {
+  year1Total: number;
+  year4Total: number;
+  normalizedAnnual: number;
+  effectiveHourly: number;
+  annualCommuteSavings: number;
+  ptoBonusDays: number;
+  ptoBonusValue: number;
+}
+
+export function calculateOffer(inputs: OfferInputs): OfferResults {
+  const { baseSalary, signingBonus, annualEquity, healthInsuranceCost, ptoDays, remoteDaysPerWeek, hoursPerWeek } = inputs;
+  const normalizedAnnual = baseSalary + annualEquity - healthInsuranceCost;
+  const year1Total = normalizedAnnual + signingBonus;
+  const year4Total = normalizedAnnual * 4 + signingBonus;
+  const effectiveHourly = normalizedAnnual / (hoursPerWeek * 50);
+  const annualCommuteSavings = remoteDaysPerWeek * 50 * 22;
+  const standardPTO = 15;
+  const ptoBonusDays = Math.max(0, ptoDays - standardPTO);
+  const ptoBonusValue = ptoBonusDays * (baseSalary / 250);
+  return { year1Total, year4Total, normalizedAnnual, effectiveHourly, annualCommuteSavings, ptoBonusDays, ptoBonusValue };
+}
+
 export function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

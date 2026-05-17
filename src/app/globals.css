@@ -2,18 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 15, 23, 42;
-  --background-start-rgb: 248, 250, 252;
-  --background-end-rgb: 239, 246, 255;
+body {
+  background: #09090b;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% -10%, rgba(99, 102, 241, 0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 70% at 85% 110%, rgba(139, 92, 246, 0.10) 0%, transparent 55%);
+  min-height: 100dvh;
+  color: #f4f4f5;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      rgb(var(--background-start-rgb)),
-      rgb(var(--background-end-rgb))
-    )
-    fixed;
-}
+::selection { background: rgba(99, 102, 241, 0.35); }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #09090b; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }

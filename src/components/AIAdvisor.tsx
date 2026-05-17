@@ -8,11 +8,11 @@ interface Props {
   contractorResults: ContractorResults | null;
 }
 
-const EXAMPLE_QUESTIONS = [
-  "Is my effective tax rate reasonable for my income?",
+const EXAMPLES = [
+  "Is my effective tax rate reasonable?",
   "Should I go contractor or stay salaried?",
-  "What contractor rate would match my salary net?",
-  "How much am I really making per hour after taxes?",
+  "What rate would match my salary net?",
+  "How much am I really making per hour?",
 ];
 
 export default function AIAdvisor({ rateResults, contractorResults }: Props) {
@@ -21,139 +21,106 @@ export default function AIAdvisor({ rateResults, contractorResults }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const answerRef = useRef<HTMLDivElement>(null);
+  const hasContext = rateResults !== null || contractorResults !== null;
 
   useEffect(() => {
-    if (answer && answerRef.current) {
-      answerRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    if (answer) answerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [answer]);
-
-  const hasContext = rateResults !== null || contractorResults !== null;
 
   function buildContext() {
     if (!hasContext) return null;
     const ctx: Record<string, unknown> = {};
-    if (rateResults) {
-      ctx.salaryCalculation = {
-        grossHourly: formatCurrency(rateResults.grossHourly),
-        netHourly: formatCurrency(rateResults.netHourly),
-        grossMonthly: formatCurrency(rateResults.grossMonthly),
-        netMonthly: formatCurrency(rateResults.netMonthly),
-        grossAnnual: formatCurrency(rateResults.grossAnnual),
-        netAnnual: formatCurrency(rateResults.netAnnual),
-        effectiveTaxRate: formatPercent(rateResults.effectiveTaxRate),
-        totalHoursPerYear: rateResults.totalHoursPerYear,
-      };
-    }
-    if (contractorResults) {
-      ctx.contractorCalculation = {
-        grossAnnual: formatCurrency(contractorResults.grossAnnual),
-        netAnnual: formatCurrency(contractorResults.netAnnual),
-        netHourly: formatCurrency(contractorResults.netHourly),
-        effectiveTaxRate: formatPercent(contractorResults.effectiveTaxRate),
-        equivalentSalary: formatCurrency(contractorResults.equivalentSalary),
-      };
-    }
+    if (rateResults) ctx.salaryCalculation = {
+      grossHourly: formatCurrency(rateResults.grossHourly),
+      netHourly: formatCurrency(rateResults.netHourly),
+      grossAnnual: formatCurrency(rateResults.grossAnnual),
+      netAnnual: formatCurrency(rateResults.netAnnual),
+      effectiveTaxRate: formatPercent(rateResults.effectiveTaxRate),
+      totalHoursPerYear: rateResults.totalHoursPerYear,
+    };
+    if (contractorResults) ctx.contractorCalculation = {
+      grossAnnual: formatCurrency(contractorResults.grossAnnual),
+      netAnnual: formatCurrency(contractorResults.netAnnual),
+      netHourly: formatCurrency(contractorResults.netHourly),
+      effectiveTaxRate: formatPercent(contractorResults.effectiveTaxRate),
+      equivalentSalary: formatCurrency(contractorResults.equivalentSalary),
+    };
     return ctx;
   }
 
   async function handleAsk(q?: string) {
     const q_ = (q ?? question).trim();
     if (!q_) return;
-    setQuestion(q ?? question);
-    setAnswer("");
-    setError("");
-    setLoading(true);
-
+    if (q) setQuestion(q);
+    setAnswer(""); setError(""); setLoading(true);
     try {
       const res = await fetch("/api/advisor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q_, context: buildContext() }),
       });
-
-      if (!res.ok || !res.body) {
-        setError(await res.text());
-        return;
-      }
-
+      if (!res.ok || !res.body) { setError(await res.text()); return; }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let accumulated = "";
+      let acc = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
-        setAnswer(accumulated);
+        acc += decoder.decode(value, { stream: true });
+        setAnswer(acc);
       }
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Network error. Try again."); }
+    finally { setLoading(false); }
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
-      {/* Header */}
+    <div className="bg-zinc-900/60 backdrop-blur-sm border border-zinc-800 rounded-2xl p-7 space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">AI Financial Advisor</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Powered by Groq · <span className="font-medium">Llama 3.3 70B</span>
-          </p>
+          <h2 className="text-xl font-bold text-white">AI Money Coach</h2>
+          <p className="text-sm text-zinc-500 mt-1">Ask anything about your rates, taxes, or comp</p>
         </div>
         {hasContext && (
-          <span className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Context loaded
+          <span className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/15 text-emerald-400 text-xs font-semibold rounded-full border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Live context
           </span>
         )}
       </div>
 
-      {/* Context hint */}
       {!hasContext && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <span className="text-amber-500 text-lg leading-none">💡</span>
-          <p className="text-sm text-amber-800">
-            Run a calculation above first to give the advisor context about your specific numbers.
-            Or ask a general question below.
+        <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+          <span className="text-amber-400 text-base leading-none mt-0.5">💡</span>
+          <p className="text-sm text-amber-300/80">
+            Run a calculation above to unlock context-aware advice, or ask a general question below.
           </p>
         </div>
       )}
 
-      {/* Example questions */}
       <div className="space-y-2">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Try asking</p>
+        <p className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Try asking</p>
         <div className="flex flex-wrap gap-2">
-          {EXAMPLE_QUESTIONS.map((q) => (
-            <button
-              key={q}
-              onClick={() => handleAsk(q)}
-              disabled={loading}
-              className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-blue-100 hover:text-blue-700 text-slate-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {q}
-            </button>
+          {EXAMPLES.map(q => (
+            <button key={q} onClick={() => handleAsk(q)} disabled={loading}
+              className="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-full transition-colors disabled:opacity-40"
+            >{q}</button>
           ))}
         </div>
       </div>
 
-      {/* Input */}
-      <div className="flex gap-3">
+      <div className="flex gap-2">
         <input
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAsk()}
-          placeholder="Ask anything about your rates, taxes, or compensation…"
+          type="text" value={question}
+          onChange={e => setQuestion(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleAsk()}
+          placeholder="Ask about your money situation…"
           disabled={loading}
-          className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-slate-50"
+          className="flex-1 bg-zinc-800/80 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-100 text-sm placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:opacity-50"
         />
         <button
           onClick={() => handleAsk()}
           disabled={loading || !question.trim()}
-          className="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors text-sm shrink-0"
+          className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 text-white font-semibold rounded-xl transition-all text-sm shrink-0"
         >
           {loading ? (
             <span className="flex items-center gap-2">
@@ -164,22 +131,16 @@ export default function AIAdvisor({ rateResults, contractorResults }: Props) {
         </button>
       </div>
 
-      {/* Response */}
       {(answer || error) && (
-        <div ref={answerRef} className="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-2">
-          {error ? (
-            <p className="text-sm text-red-600">{error}</p>
-          ) : (
-            <>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Advisor</p>
-              <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{answer}</p>
-              {!loading && (
-                <p className="text-xs text-slate-400 pt-1">
-                  Estimates only — consult a licensed tax professional for binding advice.
-                </p>
-              )}
-            </>
-          )}
+        <div ref={answerRef} className="rounded-xl border border-zinc-700/50 bg-zinc-800/60 p-5 space-y-2">
+          {error
+            ? <p className="text-sm text-red-400">{error}</p>
+            : <>
+                <p className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Coach</p>
+                <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{answer}</p>
+                {!loading && <p className="text-xs text-zinc-600 pt-1">Estimates only — not financial advice.</p>}
+              </>
+          }
         </div>
       )}
     </div>
