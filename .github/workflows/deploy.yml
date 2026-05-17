@@ -1,4 +1,4 @@
-name: CI
+name: CI & Deploy
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  check:
-    name: Lint & Build
+  deploy:
+    name: ${{ github.ref == 'refs/heads/main' && 'Build & Deploy → Production' || 'Build & Preview' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -19,8 +19,17 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npm run lint
+      - name: Lint
+        run: npm run lint
 
-      - run: npm run build
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli
+
+      - name: Build & Deploy
+        run: netlify deploy ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --build
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: 3333c58b-4545-4ef8-979c-0e35f0da9fb1
