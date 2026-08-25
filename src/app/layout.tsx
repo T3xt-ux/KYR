@@ -5,9 +5,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "KnowYourRate — Understand What You're Really Worth",
+  title: "KnowYourRate — Know What You're Actually Worth",
   description:
-    "Calculate your true hourly rate, compare salary vs contractor income, and understand your take-home pay instantly.",
+    "Decode your salary, compare job offers, calculate contractor rates, and get AI-powered money coaching — all in one place.",
 };
 
 export default function RootLayout({
