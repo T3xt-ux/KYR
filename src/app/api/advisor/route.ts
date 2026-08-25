@@ -6,6 +6,10 @@ function getGroq() {
   return new Groq({ apiKey });
 }
 
+const FREE_USES = 2;
+const USAGE_COOKIE = "kyr_ai_uses";
+const USAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
 const SYSTEM_PROMPT = `You are a sharp, practical financial advisor embedded in KnowYourRate — a tool that helps workers understand their true earning power. Your job is to give concise, specific insights about salary vs contractor comparisons, effective tax rates, hourly rates, and compensation strategy.
 
 Rules:
@@ -18,6 +22,21 @@ Rules:
 
 export async function POST(req: NextRequest) {
   try {
+    const usesSoFar = parseInt(req.cookies.get(USAGE_COOKIE)?.value ?? "0", 10) || 0;
+
+    if (usesSoFar >= FREE_USES) {
+      return new Response(
+        "You've used your 2 free AI Money Coach questions. Upgrade to keep asking.",
+        {
+          status: 402,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-AI-Uses-Remaining": "0",
+          },
+        }
+      );
+    }
+
     const { question, context } = await req.json();
 
     if (!question || typeof question !== "string" || question.trim().length === 0) {
@@ -51,11 +70,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const remaining = FREE_USES - (usesSoFar + 1);
     return new Response(readable, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "no-store",
         "X-Accel-Buffering": "no",
+        "X-AI-Uses-Remaining": String(remaining),
+        "Set-Cookie": `${USAGE_COOKIE}=${usesSoFar + 1}; Path=/; Max-Age=${USAGE_COOKIE_MAX_AGE}; SameSite=Lax; Secure`,
       },
     });
   } catch (err) {
